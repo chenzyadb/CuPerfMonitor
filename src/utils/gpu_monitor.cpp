@@ -14,7 +14,7 @@ int GpuMonitor::GetGpuCurFreq()
 		gpuFreq = StringToInteger(ReadFile("/sys/class/kgsl/kgsl-3d0/clock_mhz"));
 	} else if (IsPathExist("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq")) { // Qualcomm
 		gpuFreq = StringToLong(ReadFile("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq"));
-	} else if (IsPathExist("/sys/class/devfreq/gpufreq/cur_freq")) { // Kirin
+	} else if (IsPathExist("/sys/class/devfreq/gpufreq/cur_freq")) { // Kirin & Unisoc
 		gpuFreq = StringToLong(ReadFile("/sys/class/devfreq/gpufreq/cur_freq"));
 	} else if (IsPathExist("/sys/kernel/debug/ged/hal/current_freqency")) { // Old MediaTek
 		sscanf(ReadFile("/sys/kernel/debug/ged/hal/current_freqency").c_str(), "%*d %ld", &gpuFreq);
@@ -22,8 +22,6 @@ int GpuMonitor::GetGpuCurFreq()
 		sscanf(ReadFile("/sys/kernel/ged/hal/current_freqency").c_str(), "%*d %ld", &gpuFreq);
 	} else if (IsPathExist("/sys/class/devfreq/13000000.mali/cur_freq")) { // Mali Default
 		gpuFreq = StringToLong(ReadFile("/sys/class/devfreq/13000000.mali/cur_freq"));
-    } else if (IsPathExist("/sys/class/devfreq/gpufreq/cur_freq")) { // Old Unisoc
-		gpuFreq = StringToLong(ReadFile("/sys/class/devfreq/gpufreq/cur_freq"));
 	} else if (IsPathExist("/sys/class/devfreq/60000000.gpu/device/devfreq/60000000.gpu/cur_freq")) { // New Unisoc
 		gpuFreq = StringToLong(ReadFile("/sys/class/devfreq/60000000.gpu/device/devfreq/60000000.gpu/cur_freq"));
 	}

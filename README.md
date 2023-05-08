@@ -1,11 +1,11 @@
 # CuPerfMonitor
 A tool for monitoring performance data of Android devices.  
 
-# Feature
+## Feature
 - Based on CuprumTurbo-Scheduler V15 Framework.
 - Open source and easy to customize.
 - Supports recording various performance data such as CPU/GPU/DDR frequency, fps, jank, etc.
 - Supports JSON configuration files and exporting data as CSV format files.
 
-# How to use
+## How to use
 - See `./template`
