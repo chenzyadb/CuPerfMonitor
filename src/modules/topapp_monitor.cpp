@@ -19,6 +19,28 @@ void TopAppMonitor::Main()
 	SetThreadName("TopAppMonitor");
 
 	int topAppPid = -1;
+	std::string topAppPkgName = "";
+	{
+		std::string topAppInfo = DumpTopActivityInfo();
+		if (StrContains(topAppInfo, "fore")) {
+			// Proc # 0: fore   T/A/TOP  trm: 0 4272:xyz.chenzyadb.cu_toolbox/u0a353 (top-activity)
+			int pid = StringToInteger(GetPrevString(StrDivide(topAppInfo, 7), ':'));
+			if (pid > 0 && pid < 32768) {
+				topAppPid = pid;
+				topAppPkgName = GetPrevString(GetPostString(StrDivide(topAppInfo, 7), ':'), '/');
+			}
+		} else if (StrContains(topAppInfo, "fg")) {
+			// Proc # 0: fg     T/A/TOP  LCM  t: 0 4272:xyz.chenzyadb.cu_toolbox/u0a353 (top-activity)
+			int pid = StringToInteger(GetPrevString(StrDivide(topAppInfo, 8), ':'));
+			if (pid > 0 && pid < 32768) {
+				topAppPid = pid;
+				topAppPkgName = GetPrevString(GetPostString(StrDivide(topAppInfo, 8), ':'), '/');
+			}
+		}
+	}
+	if (!topAppPkgName.empty()) {
+		Broadcast_SendBroadcast("TopAppMonitor.TopAppChanged", (void*)topAppPkgName.c_str());
+	}
 
 	for (;;) {
 		{
@@ -30,17 +52,16 @@ void TopAppMonitor::Main()
 		}
 
 		int prevTopAppPid = topAppPid;
-		std::string topAppPkgName = "";
 		{
 			std::string topAppInfo = DumpTopActivityInfo();
-			if (strstr(topAppInfo.c_str(), "fore")) {
+			if (StrContains(topAppInfo, "fore")) {
 				// Proc # 0: fore   T/A/TOP  trm: 0 4272:xyz.chenzyadb.cu_toolbox/u0a353 (top-activity)
 				int pid = StringToInteger(GetPrevString(StrDivide(topAppInfo, 7), ':'));
 				if (pid > 0 && pid < 32768) {
 					topAppPid = pid;
 					topAppPkgName = GetPrevString(GetPostString(StrDivide(topAppInfo, 7), ':'), '/');
 				}
-			} else if (strstr(topAppInfo.c_str(), "fg")) {
+			} else if (StrContains(topAppInfo, "fg")) {
 				// Proc # 0: fg     T/A/TOP  LCM  t: 0 4272:xyz.chenzyadb.cu_toolbox/u0a353 (top-activity)
 				int pid = StringToInteger(GetPrevString(StrDivide(topAppInfo, 8), ':'));
 				if (pid > 0 && pid < 32768) {

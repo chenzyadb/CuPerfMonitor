@@ -19,7 +19,5 @@ class FpsAnalyzer {
         FpsData GetFpsData();
 
     private:
-        uint64_t clearSfBufTime_;
-        
         std::string GetWindowName();
 };

@@ -122,9 +122,10 @@ void MonitorMain::Monitor()
     RamMonitor ramMonitor;
     FpsAnalyzer fpsAnalyzer;
     fpsAnalyzer.StartAnalysis();
+    usleep(reflashIntervalMs_ * 1000);
 
     unsigned long long timeMs = 0;
-
+    
     for (;;) {
         CuCsv::CsvRow data{};
 
