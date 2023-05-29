@@ -4,7 +4,7 @@
 
 #include "platform/module_common.h"
 #include "utils/cu_misc.h"
-#include "utils/cu_log.h"
+#include "utils/CuLogger.h"
 
 class CgroupWatcher : public ModuleCommon
 {
@@ -14,8 +14,7 @@ class CgroupWatcher : public ModuleCommon
 		void Start();
 
 	private:
-		std::thread MainThread;
-		CuLog cuLog;
+		std::thread thread_;
 		int screenState;
 
 		void Main();

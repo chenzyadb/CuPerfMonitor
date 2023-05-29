@@ -8,22 +8,21 @@
 #include "utils/battery_monitor.h"
 #include "utils/ram_monitor.h"
 #include "utils/cu_misc.h"
-#include "utils/cuJson.h"
+#include "utils/JsonObject.h"
 #include "utils/cu_csv.h"
-#include "utils/cu_log.h"
+#include "utils/CuLogger.h"
 
 class MonitorMain : public ModuleCommon {
     public:
-        MonitorMain(const std::string &config, const std::string &outputPath);
+        MonitorMain(const JsonObject &config, const std::string &outputPath);
         ~MonitorMain();
 
         void Start();
 
     private:
         CuCsv cuCsv;
-        CuLog cuLog;
 
-        std::string config_;
+        JsonObject config_;
         std::string outputPath_;
         int reflashIntervalMs_;
         int saveIntervalMs_;

@@ -11,10 +11,10 @@ class TopAppMonitor : public ModuleCommon
 		void Start();
 		
 	private:
-		std::thread MainThread;
-		std::condition_variable cv;
-		std::mutex mtx;
-		bool unblocked;
+		std::thread thread_;
+		std::condition_variable cv_;
+		std::mutex mtx_;
+		bool unblocked_;
 
 		void Main();
 		void CgroupModified(const void* data);

@@ -1,54 +1,42 @@
 #include "cu_misc.h"
 
-int CreateFile(const std::string &filePath, const std::string &str)
+void CreateFile(const std::string &filePath, const std::string &str)
 {
-    int ret = -1;
-
-    int fd = open(filePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK | O_CLOEXEC, 0666);
-    if (fd <= 0) {
+    int fd = open(filePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666);
+    if (fd < 0) {
         chmod(filePath.c_str(), 0666);
-        fd = open(filePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK | O_CLOEXEC, 0666);
+        fd = open(filePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666);
     }
-    if (fd > 0) {
-        ret = write(fd, str.c_str(), str.size());
+    if (fd >= 0) {
+        write(fd, str.data(), str.size());
         close(fd);
     }
-
-    return ret;
 }
 
-int AppendFile(const std::string &filePath, const std::string &str)
+void AppendFile(const std::string &filePath, const std::string &str)
 {
-    int ret = -1;
-
     int fd = open(filePath.c_str(), O_WRONLY | O_APPEND | O_NONBLOCK | O_CLOEXEC);
-    if (fd <= 0) {
+    if (fd < 0) {
         chmod(filePath.c_str(), 0666);
         fd = open(filePath.c_str(), O_WRONLY | O_APPEND | O_NONBLOCK | O_CLOEXEC);
     }
-    if (fd > 0) {
-        ret = write(fd, str.c_str(), str.size());
+    if (fd >= 0) {
+        write(fd, str.data(), str.size());
         close(fd);
     }
-
-    return ret;
 }
 
-int WriteFile(const std::string &filePath, const std::string &str)
+void WriteFile(const std::string &filePath, const std::string &str)
 {
-    int ret = -1;
-
     int fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd <= 0) {
+    if (fd < 0) {
         chmod(filePath.c_str(), 0666);
         fd = open(filePath.c_str(), O_WRONLY | O_NONBLOCK | O_CLOEXEC);
     }
-    if (fd > 0) {
-        ret = write(fd, str.c_str(), str.size());
+    if (fd >= 0) {
+        write(fd, str.data(), str.size());
         close(fd);
     }
-
-    return ret;
 }
 
 std::string ReadFile(const std::string &filePath)
@@ -56,11 +44,11 @@ std::string ReadFile(const std::string &filePath)
     std::string ret = "";
 
     int fd = open(filePath.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd <= 0) {
-        chmod(filePath.c_str(), 0444);
+    if (fd < 0) {
+        chmod(filePath.c_str(), 0666);
         fd = open(filePath.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     }
-    if (fd > 0) {
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
         size_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
@@ -80,28 +68,25 @@ std::string ReadFileEx(const std::string &filePath)
     std::string ret = "";
 
     int fd = open(filePath.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd <= 0) {
-        chmod(filePath.c_str(), 0444);
+    if (fd < 0) {
+        chmod(filePath.c_str(), 0666);
         fd = open(filePath.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     }
-    if (fd > 0) {
-        struct stat file_stat;
+    if (fd >= 0) {
+        struct stat file_stat{};
         fstat(fd, &file_stat);
         size_t file_size = file_stat.st_size;
         if (file_size == 0) {
             file_size = 64 * 1024;
         }
-        char* buffer = (char*)malloc(file_size);
-        if (buffer) {
-            size_t len = read(fd, buffer, file_size);
-            if (len >= 0) {
-                *(buffer + len) = '\0';
-            } else {
-                *buffer = '\0';
-            }
-            ret = buffer;
-            free(buffer);
+		ret.resize(file_size + 1);
+        size_t len = read(fd, &ret[0], file_size);
+        if (len >= 0) {
+            ret[len] = '\0';
+        } else {
+            ret[0] = '\0';
         }
+        ret.resize(strlen(ret.c_str()));
         close(fd);
     }
 
@@ -148,16 +133,22 @@ std::string StrDivide(const std::string &str, const int &idx)
 
 std::string StrMerge(const char* format, ...)
 {
-    std::string ret = "";
+    std::string str = "";
+	{
+		va_list arg;
+		va_start(arg, format);
+		int size = vsnprintf(nullptr, 0, format, arg);
+		va_end(arg);
+		if (size > 0) {
+			str.resize((size_t)size + 1);
+			va_start(arg, format);
+			vsnprintf(&str[0], str.size(), format, arg);
+			va_end(arg);
+		}
+		str.resize(strlen(str.c_str()));
+	}
 
-    char buffer[4096] = { 0 };
-    va_list arg;
-    va_start(arg, format);
-    vsprintf(buffer, format, arg);
-    va_end(arg);
-    ret = buffer;
-
-    return ret;
+    return str;
 }
 
 std::string GetPrevString(const std::string &str, const char &chr)
@@ -268,7 +259,7 @@ int GetThreadPid(const int &tid)
     char statusPath[128] = { 0 };
     sprintf(statusPath, "/proc/%d/status", tid);
     int fd = open(statusPath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd > 0) {
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
         size_t len = read(fd, buffer, sizeof(buffer));
         char lineStr[128] = { 0 };
@@ -319,7 +310,7 @@ int GetTaskType(const int &pid)
     char oomAdjPath[128] = { 0 };
     sprintf(oomAdjPath, "/proc/%d/oom_adj", pid);
     int fd = open(oomAdjPath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd > 0) {
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
         read(fd, buffer, sizeof(buffer));
         int oom_adj = 16;
@@ -348,7 +339,7 @@ std::string GetTaskName(const int &pid)
     char cmdlinePath[128] = { 0 };
     sprintf(cmdlinePath, "/proc/%d/cmdline", pid);
     int fd = open(cmdlinePath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd > 0) {
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
         size_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
@@ -370,7 +361,7 @@ std::string GetTaskComm(const int &pid)
     char cmdlinePath[128] = { 0 };
     sprintf(cmdlinePath, "/proc/%d/comm", pid);
     int fd = open(cmdlinePath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd > 0) {
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
         size_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
@@ -392,7 +383,7 @@ unsigned long int GetThreadRuntime(const int &pid, const int &tid)
 	char statPath[128] = { 0 };
 	sprintf(statPath, "/proc/%d/task/%d/stat", pid, tid);
 	int fd = open(statPath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-	if (fd > 0) {
+	if (fd >= 0) {
         char buffer[4096] = { 0 };
 		size_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
@@ -401,7 +392,8 @@ unsigned long int GetThreadRuntime(const int &pid, const int &tid)
             buffer[0] = '\0';
         }
         unsigned long int utime, stime, cutime, cstime;
-		sscanf(buffer, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu %*d %*d %*d %*d %*u %*lu %*ld", &utime, &stime, &cutime, &cstime);
+		sscanf(buffer, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu %*d %*d %*d %*d %*u %*lu %*ld", 
+            &utime, &stime, &cutime, &cstime);
 		runtime = utime + stime + cutime + cstime;
         close(fd);
 	}
@@ -414,7 +406,7 @@ int GetScreenStateViaCgroup(void)
     int state = SCREEN_ON;
 
     int fd = open("/dev/cpuset/restricted/tasks", O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd > 0) {
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
         size_t len = read(fd, buffer, sizeof(buffer));
         int restrictedTaskNum = 0;
@@ -438,7 +430,7 @@ int GetScreenStateViaWakelock(void)
     int state = SCREEN_ON;
 
     int fd = open("/sys/power/wake_lock", O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd > 0) {
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
         read(fd, buffer, sizeof(buffer));
         if (strstr(buffer, "PowerManagerService.Display")) {
@@ -520,7 +512,7 @@ int GetLinuxKernelVersion(void)
     // VersionCode: r.xx.yyy(3.18.140) -> 318140; r.x.yy(5.4.86) -> 504086;
     int version = 0;
 
-    struct utsname uts;
+    struct utsname uts{};
     if (uname(&uts) != -1) {
         int r = 0, x = 0, y = 0;
         sscanf(uts.release, "%d.%d.%d-%*s", &r, &x, &y);
@@ -529,19 +521,6 @@ int GetLinuxKernelVersion(void)
     }
 
     return version;
-}
-
-std::string GetTimeInfo(void)
-{
-    std::string ret = "";
-
-    time_t time_stamp = time(nullptr);
-    struct tm* time_p = localtime(&time_stamp);
-    char buffer[32] = { 0 };
-    sprintf(buffer, "%02d-%02d %02d:%02d:%02d", time_p->tm_mon + 1, time_p->tm_mday, time_p->tm_hour, time_p->tm_min, time_p->tm_sec);
-    ret = buffer;
-
-    return ret;
 }
 
 int FindTaskPid(const std::string &taskName)
@@ -555,7 +534,7 @@ int FindTaskPid(const std::string &taskName)
             char cmdlinePath[128] = { 0 };
             sprintf(cmdlinePath, "/proc/%s/cmdline", entry->d_name);
             int fd = open(cmdlinePath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-            if (fd > 0) {
+            if (fd >= 0) {
                 char buffer[4096] = { 0 };
                 read(fd, buffer, sizeof(buffer));
                 if (strstr(buffer, taskName.c_str())) {
@@ -573,7 +552,7 @@ int FindTaskPid(const std::string &taskName)
 
 uint64_t GetTimeStampMs(void) 
 {
-    struct timespec ts;
+    struct timespec ts{};
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000;
 }

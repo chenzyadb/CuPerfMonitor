@@ -12,19 +12,20 @@ void CgroupWatcher::Start()
 	}
 	Broadcast_SendBroadcast("CgroupWatcher.ScreenStateChanged", (void*)(int64_t)screenState);
 
-	MainThread = std::thread(std::bind(&CgroupWatcher::Main, this));
-	MainThread.detach();
+	thread_ = std::thread(std::bind(&CgroupWatcher::Main, this));
+	thread_.detach();
 }
 
 void CgroupWatcher::Main()
 {
 	SetThreadName("CgroupWatcher");
+	const auto &logger = CuLogger::GetLogger();
 
 	int androidSDKVersion = GetAndroidSDKVersion();
 
 	int fd = inotify_init();
 	if (fd <= 0) {
-		cuLog.WriteLog(CuLog::ERROR, "Failed to init inotify.");
+		logger->Error("Failed to init inotify.");
 		std::exit(0);
 	}
 
@@ -32,49 +33,49 @@ void CgroupWatcher::Main()
 	if (androidSDKVersion < 29) {
 		ta_wd = inotify_add_watch(fd, "/dev/cpuset/top-app/tasks", IN_MODIFY);
 		if (ta_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch top-app cgroup.");
+			logger->Warning("Failed to watch top-app cgroup.");
 		}
 		fg_wd = inotify_add_watch(fd, "/dev/cpuset/foreground/tasks", IN_MODIFY);
 		if (fg_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch foreground cgroup.");
+			logger->Warning("Failed to watch foreground cgroup.");
 		}
 		bg_wd = inotify_add_watch(fd, "/dev/cpuset/background/tasks", IN_MODIFY);
 		if (bg_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch background cgroup.");
+			logger->Warning("Failed to watch background cgroup.");
 		}
 	} else if (androidSDKVersion < 33) {
 		ta_wd = inotify_add_watch(fd, "/dev/cpuset/top-app/tasks", IN_MODIFY);
 		if (ta_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch top-app cgroup.");
+			logger->Warning("Failed to watch top-app cgroup.");
 		}
 		fg_wd = inotify_add_watch(fd, "/dev/cpuset/foreground/tasks", IN_MODIFY);
 		if (fg_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch foreground cgroup.");
+			logger->Warning("Failed to watch foreground cgroup.");
 		}
 		bg_wd = inotify_add_watch(fd, "/dev/cpuset/background/tasks", IN_MODIFY);
 		if (bg_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch background cgroup.");
+			logger->Warning("Failed to watch background cgroup.");
 		}
 		re_wd = inotify_add_watch(fd, "/dev/cpuset/restricted/tasks", IN_MODIFY);
 		if (re_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch restricted cgroup.");
+			logger->Warning("Failed to watch restricted cgroup.");
 		}
 	} else {
 		ta_wd = inotify_add_watch(fd, "/dev/cpuset/top-app/cgroup.procs", IN_MODIFY);
 		if (ta_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch top-app cgroup.");
+			logger->Warning("Failed to watch top-app cgroup.");
 		}
 		fg_wd = inotify_add_watch(fd, "/dev/cpuset/foreground/cgroup.procs", IN_MODIFY);
 		if (fg_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch foreground cgroup.");
+			logger->Warning("Failed to watch foreground cgroup.");
 		}
 		bg_wd = inotify_add_watch(fd, "/dev/cpuset/background/cgroup.procs", IN_MODIFY);
 		if (bg_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch background cgroup.");
+			logger->Warning("Failed to watch background cgroup.");
 		}
 		re_wd = inotify_add_watch(fd, "/dev/cpuset/restricted/cgroup.procs", IN_MODIFY);
 		if (re_wd <= 0) {
-			cuLog.WriteLog(CuLog::WARNING, "Failed to watch restricted cgroup.");
+			logger->Warning("Failed to watch restricted cgroup.");
 		}
 	}
 

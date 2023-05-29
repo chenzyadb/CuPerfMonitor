@@ -1,6 +1,6 @@
 #include "monitor_main.h"
 
-MonitorMain::MonitorMain(const std::string &config, const std::string &outputPath)
+MonitorMain::MonitorMain(const JsonObject &config, const std::string &outputPath)
 {
     config_ = config;
     outputPath_ = outputPath;
@@ -18,7 +18,8 @@ void MonitorMain::Start()
     saverThread_.detach();
     topAppPkgName_ = "null";
 
-    cuLog.WriteLog(CuLog::INFO, "MonitorMain started successfully.");
+    const auto &logger = CuLogger::GetLogger();
+    logger->Info("MonitorMain started successfully.");
 
     using namespace std::placeholders;
     Broadcast_SetBroadcastReceiver("TopAppMonitor.TopAppChanged", std::bind(&MonitorMain::TopAppChanged, this, _1));
@@ -27,29 +28,28 @@ void MonitorMain::Start()
 
 void MonitorMain::Init() 
 {
-    cuJson cj;
-    cuJson::Json config = cj.ParseJson(config_);
+    const auto &logger = CuLogger::GetLogger();
 
-    reflashIntervalMs_ = cj.GetItemInt(config, "reflashIntervalMs");
-    saveIntervalMs_ = cj.GetItemInt(config, "saveIntervalMs");
+    reflashIntervalMs_ = config_.GetValueInt("reflashIntervalMs");
+    saveIntervalMs_ = config_.GetValueInt("saveIntervalMs");
 
-    cuJson::Json monitorItems = cj.GetItemJson(config, "monitorItems");
-    monitorItems_.timeMs = cj.GetItemBool(monitorItems, "timeMs");
-    monitorItems_.appPkgName = cj.GetItemBool(monitorItems, "appPkgName");
-    monitorItems_.cpuCurFreq = cj.GetItemBool(monitorItems, "cpuCurFreq");
-    monitorItems_.cpuUsage = cj.GetItemBool(monitorItems, "cpuUsage");
-    monitorItems_.cpuTemp = cj.GetItemBool(monitorItems, "cpuTemp");
-    monitorItems_.gpuCurFreq = cj.GetItemBool(monitorItems, "gpuCurFreq");
-    monitorItems_.gpuUsage = cj.GetItemBool(monitorItems, "gpuUsage");
-    monitorItems_.ddrCurFreq = cj.GetItemBool(monitorItems, "ddrCurFreq");
-    monitorItems_.batteryPower = cj.GetItemBool(monitorItems, "batteryPower");
-    monitorItems_.batteryTemp = cj.GetItemBool(monitorItems, "batteryTemp");
-    monitorItems_.batteryPercent = cj.GetItemBool(monitorItems, "batteryPercent");
-    monitorItems_.fps = cj.GetItemBool(monitorItems, "fps");
-    monitorItems_.jank = cj.GetItemBool(monitorItems, "jank");
-    monitorItems_.bigJank = cj.GetItemBool(monitorItems, "bigJank");
-    monitorItems_.maxFrameTime = cj.GetItemBool(monitorItems, "maxFrameTime");
-    monitorItems_.ramFree = cj.GetItemBool(monitorItems, "ramFree");
+    JsonObject monitorItems = config_.GetValueJson("monitorItems");
+    monitorItems_.timeMs = monitorItems.GetValueBoolean("timeMs");
+    monitorItems_.appPkgName = monitorItems.GetValueBoolean("appPkgName");
+    monitorItems_.cpuCurFreq = monitorItems.GetValueBoolean("cpuCurFreq");
+    monitorItems_.cpuUsage = monitorItems.GetValueBoolean("cpuUsage");
+    monitorItems_.cpuTemp = monitorItems.GetValueBoolean("cpuTemp");
+    monitorItems_.gpuCurFreq = monitorItems.GetValueBoolean("gpuCurFreq");
+    monitorItems_.gpuUsage = monitorItems.GetValueBoolean("gpuUsage");
+    monitorItems_.ddrCurFreq = monitorItems.GetValueBoolean("ddrCurFreq");
+    monitorItems_.batteryPower = monitorItems.GetValueBoolean("batteryPower");
+    monitorItems_.batteryTemp = monitorItems.GetValueBoolean("batteryTemp");
+    monitorItems_.batteryPercent = monitorItems.GetValueBoolean("batteryPercent");
+    monitorItems_.fps = monitorItems.GetValueBoolean("fps");
+    monitorItems_.jank = monitorItems.GetValueBoolean("jank");
+    monitorItems_.bigJank = monitorItems.GetValueBoolean("bigJank");
+    monitorItems_.maxFrameTime = monitorItems.GetValueBoolean("maxFrameTime");
+    monitorItems_.ramFree = monitorItems.GetValueBoolean("ramFree");
 
     std::vector<std::string> columnNames{};
     if (monitorItems_.timeMs) {
@@ -106,7 +106,7 @@ void MonitorMain::Init()
     for (const std::string &columnName : columnNames) {
         enabledMonitorItems += columnName + " ";
     }
-    cuLog.WriteLog(CuLog::INFO, "Enabled MonitorItems: %s.", enabledMonitorItems.c_str());
+    logger->Info("Enabled MonitorItems: %s.", enabledMonitorItems.c_str());
 
     CreateFile(outputPath_, "");
 }
@@ -114,6 +114,8 @@ void MonitorMain::Init()
 void MonitorMain::Monitor()
 {
     SetThreadName("Monitor");
+
+    uint64_t startTimeMs = GetTimeStampMs();
 
     CpuMonitor cpuMonitor;
     GpuMonitor gpuMonitor;
@@ -123,14 +125,12 @@ void MonitorMain::Monitor()
     FpsAnalyzer fpsAnalyzer;
     fpsAnalyzer.StartAnalysis();
     usleep(reflashIntervalMs_ * 1000);
-
-    unsigned long long timeMs = 0;
     
     for (;;) {
         CuCsv::CsvRow data{};
 
         if (monitorItems_.timeMs) {
-            timeMs += reflashIntervalMs_;
+            uint64_t timeMs = GetTimeStampMs() - startTimeMs;
             data["timeMs"] = StrMerge("%llu", timeMs);
         }
 

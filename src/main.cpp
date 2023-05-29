@@ -1,5 +1,5 @@
 #include "CuPerfMonitor.h"
-#include "utils/cu_log.h"
+#include "utils/CuLogger.h"
 #include "utils/cu_misc.h"
 
 constexpr char DAEMON_NAME[] = "CuPerfMonitor";
@@ -43,23 +43,22 @@ void DaemonMain(const std::string &configPath, const std::string &outputPath)
 {
 	daemon(0, 0);
 
-	CuLog cuLog;
-	cuLog.InitCuLog("/sdcard/Documents/cu_perf_monitor.log");
-	cuLog.WriteLog(CuLog::INFO, "CuPerfMonitor V1.0 (%d) by chenzyadb.", GetCompileDateCode(COMPLIE_DATE));
-	cuLog.SetLogLevel(CuLog::DEBUG);
+	CuLogger::CreateLogger(CuLogger::LOG_DEBUG, "/sdcard/Documents/cu_perf_monitor.log");
+	const auto &logger = CuLogger::GetLogger();
+	logger->Info("CuPerfMonitor V1.1 (%d) by chenzyadb.", GetCompileDateCode(COMPLIE_DATE));
 
 	if (GetLinuxKernelVersion() < MIN_KERNEL_VERSION) {
-		cuLog.WriteLog(CuLog::WARNING, "Your Linux kernel is out-of-date, may have compatibility issues.");
+		logger->Warning("Your Linux kernel is out-of-date, may have compatibility issues.");
 	}
 	if (GetAndroidSDKVersion() < MIN_ANDROID_SDK) {
-		cuLog.WriteLog(CuLog::WARNING, "Your Android System is out-of-date, may have compatibility issues.");
+		logger->Warning("Your Android System is out-of-date, may have compatibility issues.");
 	}
 	if (!IsPathExist(configPath)) {
-		cuLog.WriteLog(CuLog::ERROR, "Config file doesn't exist.");
+		logger->Error("Config file doesn't exist.");
 		exit(0);
 	}
 	if (!IsPathExist(GetRePrevString(outputPath, '/'))) {
-		cuLog.WriteLog(CuLog::ERROR, "Output path doesn't exist.");
+		logger->Error("Output path doesn't exist.");
 		exit(0);
 	}
 

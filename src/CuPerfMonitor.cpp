@@ -9,17 +9,16 @@ void CuPerfMonitor::Start(const std::string &configPath, const std::string &outp
 	try {
 		Main(configPath, outputPath);
 	} catch (const std::exception &e) {
-		cuLog.WriteLog(CuLog::ERROR, "Something went wrong while loading.");
-		cuLog.WriteLog(CuLog::ERROR, "Exception Thrown: %s.", e.what());
+		const auto &logger = CuLogger::GetLogger();
+		logger->Error("Something went wrong while loading.");
+		logger->Error("Exception Thrown: %s.", e.what());
 		std::exit(0);
 	}
 }
 
 void CuPerfMonitor::Main(const std::string &configPath, const std::string &outputPath)
 {
-	cuJson cj;
-	cuJson::Json json = cj.ParseJson(ReadFileEx(configPath));
-	std::string config = cj.PrintJson(json);
+	JsonObject config = JsonObject(ReadFileEx(configPath));
 
 	modules.clear();
 	modules.emplace_back(std::make_unique<MonitorMain>(config, outputPath));
@@ -29,5 +28,6 @@ void CuPerfMonitor::Main(const std::string &configPath, const std::string &outpu
 		module->Start();
 	}
 
-	cuLog.WriteLog(CuLog::INFO, "Daemon Running (pid=%d).", getpid());
+	const auto &logger = CuLogger::GetLogger();
+	logger->Info("Daemon Running (pid=%d).", getpid());
 }

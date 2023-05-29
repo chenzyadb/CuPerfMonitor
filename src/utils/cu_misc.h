@@ -32,9 +32,9 @@
 #define TASK_SYSTEM 3
 #define TASK_CACHED 4
 
-int CreateFile(const std::string &filePath, const std::string &str);
-int AppendFile(const std::string &filePath, const std::string &str);
-int WriteFile(const std::string &filePath, const std::string &str);
+void CreateFile(const std::string &filePath, const std::string &str);
+void AppendFile(const std::string &filePath, const std::string &str);
+void WriteFile(const std::string &filePath, const std::string &str);
 std::string ReadFile(const std::string &filePath);
 std::string ReadFileEx(const std::string &filePath);
 std::vector<std::string> StrSplit(const std::string &str, const std::string &delimiter);
@@ -60,7 +60,6 @@ int RoundNum(const float &num);
 void SetThreadName(const std::string &name);
 int GetAndroidSDKVersion(void);
 int GetLinuxKernelVersion(void);
-std::string GetTimeInfo(void);
 int FindTaskPid(const std::string &taskName);
 uint64_t GetTimeStampMs(void);
 int StringToInteger(const std::string &str);

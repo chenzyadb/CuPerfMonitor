@@ -5,9 +5,9 @@ TopAppMonitor::~TopAppMonitor() { }
 
 void TopAppMonitor::Start()
 {
-	unblocked = false;
-	MainThread = std::thread(std::bind(&TopAppMonitor::Main, this));
-	MainThread.detach();
+	unblocked_ = false;
+	thread_ = std::thread(std::bind(&TopAppMonitor::Main, this));
+	thread_.detach();
 
 	using namespace std::placeholders;
 	Broadcast_SetBroadcastReceiver("CgroupWatcher.TopAppCgroupModified", std::bind(&TopAppMonitor::CgroupModified, this, _1));
@@ -44,11 +44,11 @@ void TopAppMonitor::Main()
 
 	for (;;) {
 		{
-			std::unique_lock<std::mutex> lck(mtx);
-			while (!unblocked) {
-				cv.wait(lck);
+			std::unique_lock<std::mutex> lck(mtx_);
+			while (!unblocked_) {
+				cv_.wait(lck);
 			}
-			unblocked = false;
+			unblocked_ = false;
 		}
 
 		int prevTopAppPid = topAppPid;
@@ -80,7 +80,7 @@ void TopAppMonitor::Main()
 
 void TopAppMonitor::CgroupModified(const void* data)
 {
-	std::unique_lock<std::mutex> lck(mtx);
-	unblocked = true;
-	cv.notify_all();
+	std::unique_lock<std::mutex> lck(mtx_);
+	unblocked_ = true;
+	cv_.notify_all();
 }

@@ -11,26 +11,24 @@ class Singleton {
         Singleton(const Singleton&) = delete;
         Singleton &operator = (const Singleton&) = delete;
 
-        static T* GetInstance(void) {
-            std::call_once(FLAG, CreateInstance);
-            return INSTANCE.get();
-        }
-
-        ~Singleton() {
-            INSTANCE.reset();
+        static T* GetInstance(void) 
+        {
+            std::call_once(flag_, CreateInstance_);
+            return instance_;
         }
 
     private:
-        static void CreateInstance() {
-            INSTANCE.reset(new T());
+        static void CreateInstance_() 
+        {
+            instance_ = new T();
         }
 
-        static std::unique_ptr<T> INSTANCE;
-        static std::once_flag FLAG;
+        static T* instance_;
+        static std::once_flag flag_;
 };
 
 template<typename T>
-std::unique_ptr<T> Singleton<T>::INSTANCE = nullptr;
+T* Singleton<T>::instance_ = nullptr;
 
 template<typename T>
-std::once_flag Singleton<T>::FLAG;
+std::once_flag Singleton<T>::flag_;

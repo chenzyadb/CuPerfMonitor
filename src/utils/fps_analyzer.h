@@ -1,7 +1,6 @@
 #pragma once
 
 #include "utils/cu_misc.h"
-#include "utils/cu_log.h"
 
 class FpsAnalyzer {
     public:
