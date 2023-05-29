@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 #include <string>
 
 class JsonObject

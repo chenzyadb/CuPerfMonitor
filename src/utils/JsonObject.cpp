@@ -459,7 +459,7 @@ void JsonObject::PutArrayInt(const std::string &key, const std::vector<int> &arr
 void JsonObject::PutArrayLong(const std::string &key, const std::vector<long> &array)
 {
 	std::string arrayLong = "[";
-	for (const int &value : array) {
+	for (const long &value : array) {
 		std::string valueLong = std::to_string(value);
 		arrayLong += valueLong + ",";
 	}
