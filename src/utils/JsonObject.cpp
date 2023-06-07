@@ -729,6 +729,10 @@ std::vector<std::string> JsonObject::GetArray_(const std::string &key) const
 
 void JsonObject::PutValue_(const std::string &key, const std::string &value)
 {
-	jsonOrder_.emplace_back(key);
-	jsonMap_[key] = value;
+	if (jsonMap_.count(key) == 0) {
+		jsonOrder_.emplace_back(key);
+		jsonMap_[key] = value;
+	} else {
+		jsonMap_[key] = value;
+	}
 }
