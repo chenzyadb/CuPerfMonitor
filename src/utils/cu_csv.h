@@ -25,7 +25,7 @@
 
 #include <iostream>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include <stdexcept>
 
@@ -34,9 +34,9 @@ class CuCsv {
         CuCsv();
         ~CuCsv();
 
-        using Csv = std::unordered_map<std::string, std::vector<std::string>>;
+        using Csv = std::map<std::string, std::vector<std::string>>;
         using CsvColumn = std::vector<std::string>;
-        using CsvRow = std::unordered_map<std::string, std::string>;
+        using CsvRow = std::map<std::string, std::string>;
 
         Csv ParseCsv(const std::string &csvText, const std::string &delimiter);
         Csv CreateCsv(const std::vector<std::string> &columnNames);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "platform/module_common.h"
+#include "platform/module.h"
 #include "utils/fps_analyzer.h"
 #include "utils/cpu_monitor.h"
 #include "utils/gpu_monitor.h"
@@ -12,7 +12,7 @@
 #include "utils/cu_csv.h"
 #include "utils/CuLogger.h"
 
-class MonitorMain : public ModuleCommon {
+class MonitorMain : public Module {
     public:
         MonitorMain(const JsonObject &config, const std::string &outputPath);
         ~MonitorMain();
@@ -20,8 +20,7 @@ class MonitorMain : public ModuleCommon {
         void Start();
 
     private:
-        CuCsv cuCsv;
-
+        CuCsv cuCsv_;
         JsonObject config_;
         std::string outputPath_;
         int reflashIntervalMs_;
@@ -45,9 +44,6 @@ class MonitorMain : public ModuleCommon {
             bool maxFrameTime;
             bool ramFree;
         } monitorItems_;
-
-        std::thread monitorThread_;
-        std::thread saverThread_;
         std::string topAppPkgName_;
 
         void Init();

@@ -1,13 +1,14 @@
 #pragma once
 
 #include <iostream>
-#include <cstdio>
+#include <stdexcept>
 #include <utility>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <iterator>
+#include <cstdio>
 #include <cstdlib>
-#include <cstdbool>
 #include <climits>
 #include <ctime>
 #include <cstdarg>
@@ -30,7 +31,8 @@
 #define TASK_VISIBLE 1
 #define TASK_SERVICE 2
 #define TASK_SYSTEM 3
-#define TASK_CACHED 4
+#define TASK_BACKGROUND 4
+#define TASK_KILLABLE 5
 
 void CreateFile(const std::string &filePath, const std::string &str);
 void AppendFile(const std::string &filePath, const std::string &str);
@@ -65,3 +67,5 @@ uint64_t GetTimeStampMs(void);
 int StringToInteger(const std::string &str);
 uint64_t StringToLong(const std::string &str);
 uint64_t String16BitToInteger(const std::string &str);
+std::string TrimStr(const std::string &str);
+int AbsInt(const int &num);

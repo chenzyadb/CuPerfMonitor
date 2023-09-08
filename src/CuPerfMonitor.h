@@ -3,7 +3,7 @@
 #include <iostream>
 #include <exception>
 
-#include "platform/module_common.h"
+#include "platform/module.h"
 #include "platform/singleton.h"
 #include "modules/monitor_main.h"
 #include "modules/cgroup_watcher.h"
@@ -20,7 +20,7 @@ class CuPerfMonitor
 		void Start(const std::string &configPath, const std::string &modePath);
 
 	private:
-		std::vector<std::unique_ptr<ModuleCommon>> modules;
+		std::vector<Module*> modules_;
 
-		void Main(const std::string &configPath, const std::string &modePath);
+		void Main_(const std::string &configPath, const std::string &modePath);
 };

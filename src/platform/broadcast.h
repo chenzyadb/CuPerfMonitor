@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <vector>
 #include <utility>
-
 #include "singleton.h"
+#include "utils/ptr_data_conversion.h"
 
 class Broadcast : public Singleton<Broadcast>
 {
@@ -19,5 +19,5 @@ class Broadcast : public Singleton<Broadcast>
 		void SendBroadcast(const std::string &broadcastName, const void* data);
 
 	private:
-		std::unordered_map<std::string, std::vector<BroadcastReceiver>> broadcastList;
+		std::unordered_map<std::string, std::vector<BroadcastReceiver>> broadcastMap_;
 };

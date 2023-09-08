@@ -50,7 +50,7 @@ std::string ReadFile(const std::string &filePath)
     }
     if (fd >= 0) {
         char buffer[4096] = { 0 };
-        size_t len = read(fd, buffer, sizeof(buffer));
+        off_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
             buffer[len] = '\0';
         } else {
@@ -73,34 +73,37 @@ std::string ReadFileEx(const std::string &filePath)
         fd = open(filePath.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     }
     if (fd >= 0) {
-        struct stat file_stat{};
-        fstat(fd, &file_stat);
-        size_t file_size = file_stat.st_size;
-        if (file_size == 0) {
-            file_size = 64 * 1024;
+        off_t file_size = lseek(fd, 0, SEEK_END);
+        lseek(fd, 0, SEEK_SET);
+        if (file_size == -1) {
+            file_size = 4096;
         }
-		ret.resize(file_size + 1);
-        size_t len = read(fd, &ret[0], file_size);
+		ret.resize(file_size);
+        off_t len = read(fd, &ret[0], file_size);
         if (len >= 0) {
-            ret[len] = '\0';
+            ret.resize(len);
         } else {
-            ret[0] = '\0';
+            ret.clear();
         }
-        ret.resize(strlen(ret.c_str()));
         close(fd);
     }
 
     return ret;
 }
 
-std::vector<std::string> StrSplit(const std::string &str, const std::string &delimiter)
-{
+std::vector<std::string> StrSplit(const std::string& str, const std::string& delimiter) {
     std::vector<std::string> strList{};
+
+    if (str.empty() || delimiter.empty()) {
+        return strList;
+    }
 
     size_t start_pos = 0;
     size_t pos = str.find(delimiter);
     while (pos != std::string::npos) {
-        strList.emplace_back(str.substr(start_pos, pos - start_pos));
+        if (pos != start_pos) {
+            strList.emplace_back(str.substr(start_pos, pos - start_pos));
+        }
         start_pos = pos + delimiter.size();
         pos = str.find(delimiter, start_pos);
     }
@@ -212,13 +215,14 @@ bool StrContains(const std::string &str, const std::string &subStr)
 bool CheckRegex(const std::string &str, const std::string &regex)
 {
     bool ret = false;
-
-    regex_t comment;
-    regcomp(&comment, regex.c_str(), REG_EXTENDED | REG_NEWLINE | REG_NOSUB);
-    if (regexec(&comment, str.c_str(), 0, nullptr, 0) != REG_NOMATCH) {
-        ret = true;
+    {
+        regex_t comment{};
+        regcomp(&comment, regex.c_str(), REG_EXTENDED | REG_NEWLINE | REG_NOSUB);
+        if (regexec(&comment, str.c_str(), 0, nullptr, 0) != REG_NOMATCH) {
+            ret = true;
+        }
+        regfree(&comment);
     }
-    regfree(&comment);
 
     return ret;
 }
@@ -261,7 +265,7 @@ int GetThreadPid(const int &tid)
     int fd = open(statusPath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd >= 0) {
         char buffer[4096] = { 0 };
-        size_t len = read(fd, buffer, sizeof(buffer));
+        off_t len = read(fd, buffer, sizeof(buffer));
         char lineStr[128] = { 0 };
         int start_p = 0;
         for (int i = 0; i < len; i++) {
@@ -323,8 +327,10 @@ int GetTaskType(const int &pid)
             taskType = TASK_SERVICE;
         } else if (oom_adj <= -1 && oom_adj >= -17) {
             taskType = TASK_SYSTEM;
-        } else if (oom_adj >= 9 && oom_adj <= 16) {
-            taskType = TASK_CACHED;
+        } else if (oom_adj >= 9 && oom_adj <= 14) {
+            taskType = TASK_BACKGROUND;
+        } else if (oom_adj == 15 || oom_adj == 16) {
+            taskType = TASK_KILLABLE;
         }
         close(fd);
     }
@@ -341,7 +347,7 @@ std::string GetTaskName(const int &pid)
     int fd = open(cmdlinePath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd >= 0) {
         char buffer[4096] = { 0 };
-        size_t len = read(fd, buffer, sizeof(buffer));
+        off_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
             buffer[len] = '\0';
         } else {
@@ -363,7 +369,7 @@ std::string GetTaskComm(const int &pid)
     int fd = open(cmdlinePath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd >= 0) {
         char buffer[4096] = { 0 };
-        size_t len = read(fd, buffer, sizeof(buffer));
+        off_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
             buffer[len] = '\0';
         } else {
@@ -376,22 +382,22 @@ std::string GetTaskComm(const int &pid)
     return ret;
 }
 
-unsigned long int GetThreadRuntime(const int &pid, const int &tid)
+uint64_t GetThreadRuntime(const int &pid, const int &tid)
 {
-	unsigned long int runtime = 0;
+	uint64_t runtime = 0;
 
 	char statPath[128] = { 0 };
 	sprintf(statPath, "/proc/%d/task/%d/stat", pid, tid);
 	int fd = open(statPath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 	if (fd >= 0) {
         char buffer[4096] = { 0 };
-		size_t len = read(fd, buffer, sizeof(buffer));
+		off_t len = read(fd, buffer, sizeof(buffer));
         if (len >= 0) {
             buffer[len] = '\0';
         } else {
             buffer[0] = '\0';
         }
-        unsigned long int utime, stime, cutime, cstime;
+        uint64_t utime, stime, cutime, cstime;
 		sscanf(buffer, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu %*d %*d %*d %*d %*u %*lu %*ld", 
             &utime, &stime, &cutime, &cstime);
 		runtime = utime + stime + cutime + cstime;
@@ -408,7 +414,7 @@ int GetScreenStateViaCgroup(void)
     int fd = open("/dev/cpuset/restricted/tasks", O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd >= 0) {
         char buffer[4096] = { 0 };
-        size_t len = read(fd, buffer, sizeof(buffer));
+        off_t len = read(fd, buffer, sizeof(buffer));
         int restrictedTaskNum = 0;
         for (int i = 0; i < len; i++) {
             if (buffer[i] == '\n') {
@@ -662,4 +668,36 @@ uint64_t String16BitToInteger(const std::string &str)
     }
 
     return integer;
+}
+
+std::string TrimStr(const std::string &str)
+{
+    std::string trimedStr = "";
+    for (const auto &c : str) {
+        switch (c) {
+            case ' ':
+                break;
+            case '\n':
+                break;
+            case '\t':
+                break;
+            case '\r':
+                break;
+            default:
+                trimedStr += c;
+                break;
+        }
+    }
+
+    return trimedStr;
+}
+
+int AbsInt(const int &num)
+{
+    int ret = num;
+    if (ret < 0) {
+        ret = 0 - ret;
+    }
+
+    return ret;
 }

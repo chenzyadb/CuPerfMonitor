@@ -6,27 +6,22 @@ DdrMonitor::~DdrMonitor() { }
 
 int DdrMonitor::GetDdrCurFreq() 
 {
-    uint64_t ddrFreq = 0;
-
+    int ddrFreq = 0;
     if (IsPathExist("/sys/class/devfreq/ddrfreq/cur_freq")) { // Kirin
-        ddrFreq = StringToLong(ReadFile("/sys/class/devfreq/ddrfreq/cur_freq"));
+        auto ddrFreqHz = StringToLong(ReadFile("/sys/class/devfreq/ddrfreq/cur_freq")) / 1000000;
+        ddrFreq = static_cast<int>(ddrFreqHz);
     } else if (IsPathExist("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump")) { // MediaTek
-        std::string dumpStr = ReadFile("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump");
-        std::vector<std::string> lines = StrSplit(dumpStr, "\n");
-        for (const std::string &line : lines) {
+        auto lines = StrSplit(ReadFile("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump"), "\n");
+        for (const auto &line : lines) {
             if (StrContains(line, "khz")) {
                 // DDR    : 1866000  khz
-                ddrFreq = StringToLong(GetPrevString(GetPostString(line, ':'), 'k'));
+                ddrFreq = StringToInteger(GetPrevString(GetPostString(line, ':'), 'k')) / 1000;
                 break;
             }
         }
+    } else if (IsPathExist("/sys/devices/system/cpu/bus_dcvs/DDR/cur_freq")) { // Qualcomm 
+        ddrFreq = StringToInteger(ReadFile("/sys/devices/system/cpu/bus_dcvs/DDR/cur_freq")) / 1000;
     }
 
-    if (ddrFreq > 10000000) {
-		ddrFreq = ddrFreq / 1000000;
-	} else if (ddrFreq > 10000) {
-		ddrFreq = ddrFreq / 1000;
-	}
-
-    return (int)ddrFreq;
+    return ddrFreq;
 }

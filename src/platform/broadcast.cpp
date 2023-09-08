@@ -1,23 +1,23 @@
 #include "broadcast.h"
 
-Broadcast::Broadcast() {}
+Broadcast::Broadcast() : broadcastMap_() {}
 
 void Broadcast::SetBroadcastReceiver(const std::string &broadcastName, const BroadcastReceiver &br)
 {
-    auto iter = broadcastList.find(broadcastName);
-    if (iter == broadcastList.end()) {
-        iter = broadcastList.emplace(broadcastName, std::vector<BroadcastReceiver>{}).first;
+    auto iter = broadcastMap_.find(broadcastName);
+    if (iter == broadcastMap_.end()) {
+        iter = broadcastMap_.emplace(broadcastName, std::vector<BroadcastReceiver>{}).first;
     }
     iter->second.emplace_back(br);
 }
 
 void Broadcast::SendBroadcast(const std::string &broadcastName, const void* data)
 {
-    const auto &iter = broadcastList.find(broadcastName);
-    if (iter != broadcastList.end()) {
-        const auto &brList = iter->second;
-        for (const auto &br : brList) {
-            br(data);
+    const auto &iter = broadcastMap_.find(broadcastName);
+    if (iter != broadcastMap_.end()) {
+        const auto &receivers = iter->second;
+        for (const auto &receiver : receivers) {
+            receiver(data);
         }
     }
 }

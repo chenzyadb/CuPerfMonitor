@@ -1,13 +1,19 @@
 #include "CuPerfMonitor.h"
 
-CuPerfMonitor::CuPerfMonitor() {}
+CuPerfMonitor::CuPerfMonitor() : modules_() {}
 
-CuPerfMonitor::~CuPerfMonitor() {}
+CuPerfMonitor::~CuPerfMonitor() 
+{
+	for (auto &module : modules_) {
+		delete module;
+		module = nullptr;
+	}
+}
 
 void CuPerfMonitor::Start(const std::string &configPath, const std::string &outputPath)
 {
 	try {
-		Main(configPath, outputPath);
+		Main_(configPath, outputPath);
 	} catch (const std::exception &e) {
 		const auto &logger = CuLogger::GetLogger();
 		logger->Error("Something went wrong while loading.");
@@ -16,15 +22,15 @@ void CuPerfMonitor::Start(const std::string &configPath, const std::string &outp
 	}
 }
 
-void CuPerfMonitor::Main(const std::string &configPath, const std::string &outputPath)
+void CuPerfMonitor::Main_(const std::string &configPath, const std::string &outputPath)
 {
 	JsonObject config = JsonObject(ReadFileEx(configPath));
 
-	modules.clear();
-	modules.emplace_back(std::make_unique<MonitorMain>(config, outputPath));
-	modules.emplace_back(std::make_unique<CgroupWatcher>());
-	modules.emplace_back(std::make_unique<TopAppMonitor>());
-	for (const auto &module : modules) {
+	modules_.clear();
+	modules_.emplace_back(new MonitorMain(config, outputPath));
+	modules_.emplace_back(new CgroupWatcher());
+	modules_.emplace_back(new TopAppMonitor());
+	for (const auto &module : modules_) {
 		module->Start();
 	}
 

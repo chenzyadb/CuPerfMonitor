@@ -4,7 +4,7 @@
 
 constexpr char DAEMON_NAME[] = "CuPerfMonitor";
 constexpr char COMPLIE_DATE[] = __DATE__;
-constexpr int MIN_KERNEL_VERSION = 401000;
+constexpr int MIN_KERNEL_VERSION = 404000;
 constexpr int MIN_ANDROID_SDK = 28;
 
 void ResetArgv(int argc, char* argv[])
@@ -20,7 +20,6 @@ void ResetArgv(int argc, char* argv[])
 void KillOldDaemon(void)
 {
 	int myPid = getpid();
-
 	DIR* dir = opendir("/proc");
 	if (dir) {
 		struct dirent* entry = nullptr;
@@ -45,13 +44,13 @@ void DaemonMain(const std::string &configPath, const std::string &outputPath)
 
 	CuLogger::CreateLogger(CuLogger::LOG_DEBUG, "/sdcard/Documents/cu_perf_monitor.log");
 	const auto &logger = CuLogger::GetLogger();
-	logger->Info("CuPerfMonitor V1.1 (%d) by chenzyadb.", GetCompileDateCode(COMPLIE_DATE));
+	logger->Info("CuPerfMonitor V2 (%d) by chenzyadb.", GetCompileDateCode(COMPLIE_DATE));
 
 	if (GetLinuxKernelVersion() < MIN_KERNEL_VERSION) {
-		logger->Warning("Your Linux kernel is out-of-date, may have compatibility issues.");
+		logger->Warning("Your Linux kernel is out-of-date.");
 	}
 	if (GetAndroidSDKVersion() < MIN_ANDROID_SDK) {
-		logger->Warning("Your Android System is out-of-date, may have compatibility issues.");
+		logger->Warning("Your Android System is out-of-date.");
 	}
 	if (!IsPathExist(configPath)) {
 		logger->Error("Config file doesn't exist.");

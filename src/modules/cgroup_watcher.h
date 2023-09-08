@@ -1,12 +1,11 @@
 #pragma once
 
-#include <sys/inotify.h>
-
-#include "platform/module_common.h"
+#include <thread>
+#include "platform/module.h"
 #include "utils/cu_misc.h"
 #include "utils/CuLogger.h"
 
-class CgroupWatcher : public ModuleCommon
+class CgroupWatcher : public Module
 {
 	public:
 		CgroupWatcher();
@@ -14,8 +13,7 @@ class CgroupWatcher : public ModuleCommon
 		void Start();
 
 	private:
-		std::thread thread_;
-		int screenState;
+		int screenState_;
 
-		void Main();
+		void Main_();
 };

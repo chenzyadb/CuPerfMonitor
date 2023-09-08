@@ -1,9 +1,11 @@
 #pragma once
 
-#include "platform/module_common.h"
+#include <regex>
+#include "platform/module.h"
 #include "utils/cu_misc.h"
+#include "utils/CuLogger.h"
 
-class TopAppMonitor : public ModuleCommon
+class TopAppMonitor : public Module
 {
 	public:
 		TopAppMonitor();
@@ -11,11 +13,10 @@ class TopAppMonitor : public ModuleCommon
 		void Start();
 		
 	private:
-		std::thread thread_;
 		std::condition_variable cv_;
 		std::mutex mtx_;
 		bool unblocked_;
 
-		void Main();
-		void CgroupModified(const void* data);
+		void Main_();
+		void CgroupModified_(const void* data);
 };
